@@ -1,0 +1,45 @@
+#!/usr/bin/python
+
+import sys
+from cclib.parser import ccopen
+import logging
+
+def besttrans(etens, etoscs, return_osc=False):
+    """Return the scaling factor and energy of the best transition"""
+    idx = 0
+    found = -1
+    max = 0
+    for idx in range(0, len(etens)):
+        if etoscs[idx] >= 1.0 and found==-1:
+            found = idx
+        if etoscs[idx] > etoscs[max]:
+            max = idx
+
+    scale = 1.0
+    chosenidx = found
+    if found == -1:
+        # Use the strongest oscillator, and scale by the
+        # strength
+        chosenidx = max
+        scale = etoscs[chosenidx]
+
+    if not return_osc:
+        return scale, etens[chosenidx]
+    else:
+        return scale, etens[chosenidx], etoscs[chosenidx]
+
+
+for filename in sys.argv[1:]:
+    file = ccopen(filename)
+
+    # Strip off common extensions
+    filename = filename.split('.',1)[0]
+
+    file.logger.setLevel(logging.ERROR)
+    molecule = file.parse()
+
+    try:
+        (scale, bestE, bestOsc) = besttrans(molecule.etenergies, molecule.etoscs, True)
+        print filename, bestE * 1.23981e-4, bestOsc
+    except (AttributeError, TypeError):
+        print filename

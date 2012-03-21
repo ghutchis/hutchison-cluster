@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import sys
+from cclib.parser import ccopen
+import logging
+
+for filename in sys.argv[1:]:
+    file = ccopen(filename)
+
+    # Strip off common extensions
+    filename = filename.split('.',1)[0]
+
+    file.logger.setLevel(logging.ERROR)
+    molecule = file.parse()
+
+    print filename, molecule.scfenergies[-1]

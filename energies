@@ -1,0 +1,43 @@
+#!/usr/bin/python
+
+import sys
+from cclib.parser import ccopen
+import logging
+
+for filename in sys.argv[1:]:
+    file = ccopen(filename)
+
+    # Strip off common extensions
+    filename = filename.split('.',1)[0]
+    if filename.startswith('line'):
+        filename = filename[4:]
+
+    file.logger.setLevel(logging.ERROR)
+    molecule = file.parse()
+
+    try:
+        if (len(molecule.homos) == 1):
+            # only alpha spin
+            homo = molecule.homos[0]
+            moenergies = molecule.moenergies[0]
+            print filename, moenergies[homo-3], moenergies[homo-2], moenergies[homo-1], moenergies[homo], " | ", moenergies[homo+1], moenergies[homo+2], moenergies[homo+3], moenergies[homo+4]
+        else:
+            alpha = molecule.homos[0]
+            beta = molecule.homos[1]
+            string = filename
+            alphaEnergies = molecule.moenergies[0]
+            betaEnergies = molecule.moenergies[1]
+            if (alphaEnergies[alpha] < betaEnergies[beta]):
+                string += "%8.4fa  %8.4fb" % (alphaEnergies[alpha], betaEnergies[beta])
+            else:
+                string += "%8.4fb  %8.4fa" % (betaEnergies[beta], alphaEnergies[alpha])
+            string += " | "
+            if (alphaEnergies[alpha+1] < betaEnergies[beta+1]):
+                string += "%8.4fa  %8.4fb" % (alphaEnergies[alpha+1], betaEnergies[beta+1])
+            else:
+                string += "%8.4fb  %8.4fa" % (betaEnergies[beta+1], alphaEnergies[alpha+1])
+            print string
+
+
+    except (AttributeError, TypeError, IndexError):
+        print filename
