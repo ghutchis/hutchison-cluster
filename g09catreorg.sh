@@ -44,12 +44,13 @@ cd ${SCRATCH}
 
 # Remove any old *.gz files
 sed -e 's/0  1/1  2/' <${NAME}+.com | sed -e 's/0  3/1  2/' >${NAME}+.new
+mv ${NAME}+.new ${NAME}+.com
 g09 ${NAME}+.com ${NAME}+.g09
 
 # neutral electronic, cation geometry
 babel ${NAME}+.g09 -xf /tmp/sp1 ${NAME}+@.com
 sed -e 's/1  2/0  1/' <${NAME}+@.com >${NAME}+@.new
-mv ${NAME}+@.new ${NAME}+@.com
+cp ${NAME}+@.new ${NAME}+@.com
 g09 ${NAME}+@.com ${NAME}+@.g09
 
 gzip -9 ${NAME}*.g09
@@ -57,4 +58,4 @@ cp ${NAME}*.g09.gz $BASE
 
 # final cleanup
 cd $BASE
-rm -rf ${SCRATCH}
+#rm -rf ${SCRATCH}

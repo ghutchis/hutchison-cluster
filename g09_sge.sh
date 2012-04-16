@@ -44,7 +44,9 @@ if [ -f ${fchk} ]; then
 fi
 
 # Remove any old *.gz files
-rm *.gz
+if [ `pwd` -ef ${SCRATCH} ]; then
+  rm *.gz
+fi
 FILENAME=${INPUT%%.com}
 g09 ${INPUT} ${FILENAME}.g09
 

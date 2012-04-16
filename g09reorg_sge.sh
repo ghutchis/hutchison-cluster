@@ -73,6 +73,8 @@ sed -e 's/1  2/0  1/' <${NAME}+@.com >${NAME}+@.new
 mv ${NAME}+@.new ${NAME}+@.com
 g09 ${NAME}+@.com ${NAME}+@.g09
 
+rm ${NAME}+.g09.gz
+rm ${NAME}+@.g09.gz
 gzip -9 ${NAME}*.g09
 cp ${NAME}*.g09.gz $BASE
 
