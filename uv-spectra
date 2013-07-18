@@ -1,0 +1,50 @@
+#!/usr/bin/python
+
+import sys
+from cclib.parser import ccopen
+import logging
+
+def spectra(etens, etoscs, low = 0.5, high = 10.0, resolution = 0.01, smear = 0.04):
+    """Return arrays of the energies and intensities of a Lorentzian-blurred spectrum"""
+
+    maxSlices = int((high - low) / resolution) + 1
+    peaks = len(etens)
+
+    spectraEV = []
+    spectraNM = []
+    spectraIntensity = []
+
+    # eV = wavenumbers * 1.23981e-4
+    # nm = 1.0e7 / wavenumbers
+
+    for i in range(0, maxSlices):
+        # in eV
+        energy = float(i * resolution + low)
+        wavenumber = energy / 1.23981e-4
+        intensity = 0.0
+        for trans in range(0, len(etens)):
+            this_smear = smear / 0.2 * (-0.046 * etoscs[trans] + 0.20)
+            #            print this_smear
+            deltaE = etens[trans] * 1.23981e-4 - energy
+            intensity = intensity + etoscs[trans] * this_smear**2 / (deltaE**2 + this_smear**2)
+
+        spectraEV.append(energy)
+        spectraNM.append(float(1.0e7 / wavenumber))
+        spectraIntensity.append(intensity)
+
+    return spectraEV, spectraNM, spectraIntensity
+
+for filename in sys.argv[1:]:
+    file = ccopen(filename)
+
+    # Strip off common extensions
+    filename = filename.split('.',1)[0]
+
+    file.logger.setLevel(logging.ERROR)
+    molecule = file.parse()
+
+    (spectraEV, spectraNM, spectraIntensity) = spectra(molecule.etenergies, molecule.etoscs)
+
+    print "EnergyEV WavelengthNM IntensityAU"
+    for i in range(0, len(spectraEV)):
+        print spectraEV[i], spectraNM[i], spectraIntensity[i]

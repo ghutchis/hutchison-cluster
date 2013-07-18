@@ -1,0 +1,101 @@
+#!/usr/bin/python
+
+# Simple Monte Carlo estimation of VdW molecular volume (in A^3)
+# by Geoffrey Hutchison <geoffh@pitt.edu>
+#
+# Usage:
+# volume.py *.g09
+#
+
+import sys
+import random
+import os.path
+import openbabel as ob
+import pybel
+
+# Helper function (brute force)
+# Determine if a point (xyz) is inside the VdW volume of a molecule
+def isInMolecule(point, mol):
+    for atom in mol:
+        radius = ob.etab.GetVdwRad(atom.atomicnum)
+        r2 = radius * radius
+
+        coords = atom.coords
+        x = point[0] - coords[0]
+        y = point[1] - coords[1]
+        z = point[2] - coords[2]
+
+        if (x*x + y*y + z*z <= r2):
+            return True # no need to do more work
+
+    # Didn't find a matching atom, so this point is outside
+    return False
+
+# Main Loop -- go through multiple files, e.g. volume.py *.g09
+for filename in sys.argv[1:]:
+    extension = os.path.splitext(filename)[1][1:]
+    mol = pybel.readfile(extension, filename).next()
+
+    # determine the bounding box
+    xMin = 1.0e6
+    xMax = -1.0e6
+    yMin = xMin
+    yMax = xMax
+    zMin = xMin
+    zMax = xMax
+
+    # Find the box
+    for atom in mol:
+        coords = atom.coords
+        radius = ob.etab.GetVdwRad(atom.atomicnum)
+        if ((coords[0] - radius) < xMin):
+            xMin = coords[0] - radius
+        if ((coords[0] + radius) > xMax):
+            xMax = coords[0] + radius
+
+        if ((coords[1] - radius) < yMin):
+            yMin = coords[1] - radius
+        if ((coords[1] + radius) > yMax):
+            yMax = coords[1] + radius
+
+        if ((coords[2] - radius) < zMin):
+            zMin = coords[2] - radius
+        if ((coords[2] + radius) > zMax):
+            zMax = coords[2] + radius
+
+    xRange = xMax - xMin
+    yRange = yMax - yMin
+    zRange = zMax - zMin
+
+    boxVolume = float(xRange * yRange * zRange)
+
+    # We calculate the ratio of points inside and outside the VdW shell of the molecule
+    moleculePoints = 0
+    totalPoints = 0
+    for point in range(0, 100000): # one hundred thousand points
+        x = random.uniform(xMin, xMax)
+        y = random.uniform(yMin, yMax)
+        z = random.uniform(zMin, zMax)
+
+        if (isInMolecule( (x, y, z), mol)):
+            moleculePoints += 1
+        totalPoints += 1
+
+    # OK, now we have an estimate from 100,000 points
+    # We'll get a better estimate by adding more points until we reach some convergence
+    volume = float(moleculePoints) / float(totalPoints) * boxVolume
+    newVolume = 0.0
+    while ( abs(volume - newVolume) < 0.01):
+        x = random.uniform(xMin, xMax)
+        y = random.uniform(yMin, yMax)
+        z = random.uniform(zMin, zMax)
+
+        if (isInMolecule( (x, y, z), mol)):
+            moleculePoints += 1
+        totalPoints += 1
+        if ( totalPoints % 10000 ):
+            volume = newVolume
+            newVolume = float(moleculePoints) / float(totalPoints) * boxVolume
+
+    # OK, print the filename, the box, and the volume
+    print filename, "Box: ", xMin, xMax, yMin, yMax, zMin, zMax, "Volume: ", volume
