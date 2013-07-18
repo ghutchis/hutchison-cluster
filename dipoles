@@ -3,5 +3,5 @@
 for file in "$@"
 do
     /bin/echo -n "${file}: "
-    grep -A 1 " Dipole moment (field-independent basis" ${file} | tail -1 | awk '{print $8;}'
+    zgrep -A 1 " Dipole moment (field-independent basis" ${file} | tail -1 | awk '{print $8;}'
 done
