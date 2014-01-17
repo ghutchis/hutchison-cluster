@@ -1,0 +1,26 @@
+#!/usr/bin/python
+
+import sys
+import openbabel as ob
+import pybel
+
+for filename in sys.argv[1:]:
+    mol = pybel.readfile("g09", filename).next()
+    nitro = mol.atoms[0]
+    amine = mol.atoms[0]
+
+    # Strip off common extensions
+    filename = filename.split('.',1)[0]
+    if filename.startswith('line'):
+        filename = filename[4:]
+
+    # loop through to find the nitro and amine N atoms
+    for atom in mol:
+        if atom.OBAtom.IsNitrogen() and atom.OBAtom.CountFreeOxygens() == 2:
+#            print "got no2"
+            nitro = atom
+        if atom.OBAtom.IsNitrogen() and atom.OBAtom.ExplicitHydrogenCount() == 2:
+#            print "got nh2"
+            amine = atom
+
+    print filename, amine.OBAtom.GetDistance(nitro.OBAtom)
