@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+import sys
+from operator import itemgetter
+
+import pybel
+import svgwrite
+
+for filename in sys.argv[1:]:
+    ext = filename.split('.',1)[1]
+    mol = pybel.readfile(ext, filename).next()
+    # get name for svg
+
+    svg_filename = filename.split('.',1)[0] + '.svg'
+
+    svg_document = svgwrite.Drawing(filename = svg_filename,
+                                    size = ("600px", "600px"),
+                                    profile="tiny")
+
+    radial_sphere = svg_document.radialGradient( center = (0,0), r=100 )
+    svg_document.defs.add(radial_sphere)
+
+    radial_sphere.add_stop_color(0, 'white')
+    radial_sphere.add_stop_color(0.75, 'green')
+    radial_sphere.add_stop_color(1, '#113311')
+
+    minX, minY = 1e6, 1e6
+    maxX, maxY = -1e6, -1e6
+
+    coords = []
+    for atom in mol:
+        x, y, z = atom.coords
+        if x < minX:
+            minX = x
+        if x > maxX:
+            maxX = x
+
+        if y < minY:
+            minY = y
+        if y > maxY:
+            maxY = y
+
+    range = max( (maxX - minX), (maxY - minY) )
+    scale = 600.0 / float(range + 20.0)
+
+    for atom in mol:
+        x, y, z, = atom.coords
+        x = (x - minX) * scale
+        y = (y - minY) * scale
+        svg_document.add(svg_document.circle(center = (x, y),
+                                             r=10,
+                                             fill = radial_sphere.get_paint_server()))
+
+    svg_document.save()
